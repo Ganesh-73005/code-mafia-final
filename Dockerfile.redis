@@ -1,0 +1,9 @@
+# Redis Client / Server Dockerfile
+FROM redis:7.2.4
+
+# Alternatively, if you just want a client-only container to connect to an existing Redis:
+# FROM redis:7.2.4
+# CMD ["redis-cli", "-h", "redis", "-a", "yourpassword"]
+
+# Setup for the standard Redis container with password required
+CMD ["bash", "-c", "docker-entrypoint.sh --appendonly no --requirepass \"$REDIS_PASSWORD\""]

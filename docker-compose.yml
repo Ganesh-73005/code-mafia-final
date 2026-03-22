@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  redis:
+    build:
+      context: .
+      dockerfile: Dockerfile.redis
+    image: code-mafia-redis:latest
+    container_name: code-mafia-redis
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-ganesh123}
+    networks:
+      - code-mafia-network
+    restart: always
+
+  backend:
+    build:
+      context: ./go-backend
+    image: code-mafia-backend:latest
+    container_name: code-mafia-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-code_mafia}
+      - REDIS_ADDRESS=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-ganesh123}
+      - SECRET_KEY=${SECRET_KEY}
+      - RAPIDAPI_URL=${RAPIDAPI_URL:-https://judge0-ce.p.rapidapi.com}
+      - RAPIDAPI_HOST=${RAPIDAPI_HOST:-judge0-ce.p.rapidapi.com}
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    depends_on:
+      - redis
+    networks:
+      - code-mafia-network
+    restart: always
+
+  frontend:
+    build:
+      context: ./client
+      args:
+        - REACT_APP_SERVER_BASEAPI=https://api.yourdomain.com/api # Replace with your production domain
+    image: code-mafia-frontend:latest
+    container_name: code-mafia-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - code-mafia-network
+    restart: always
+
+networks:
+  code-mafia-network:
+    driver: bridge
