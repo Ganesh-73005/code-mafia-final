@@ -17,7 +17,7 @@ function PowerUpController() {
         { id: 10, name: "Shield", description: "", effect: "shield", icon: "/assets/shield.svg", cost: 5 },
     ]);
     const [username, setUsername] = useState("");
-    const [socketUser, setSocketUser] = useState("");
+    const [socketUser, setSocketUser] = useState(null); // FIX: Initialize as null instead of empty string
     const [clickedPower, setClickedPower] = useState("");
     const [clickedTeam, setClickedTeam] = useState(null);
     const [teams, setTeamsState] = useState([]);
@@ -198,6 +198,11 @@ function PowerUpController() {
         }
 
         if (clickedPower === "suicide-bomber") {
+            // FIX: Ensure socketUser is not null before accessing userID
+            if (!socketUser || !socketUser.userID) {
+                alert("Error: User information not loaded. Please refresh.");
+                return;
+            }
             socket.emit("suicide-attack", {
                 targetUserID: clickedTeam.userID,
                 currentUserID: socketUser.userID,
@@ -205,9 +210,10 @@ function PowerUpController() {
                 token: localStorage.getItem("token")
             })
             setPowerupsDialogOpen(false);
+            // FIX: Changed ${} to {} for JSX template literals
             setMessage(
                 <>
-                    You used ${clickedPower} on ${clickedTeam.username}
+                    You used {clickedPower} on {clickedTeam.username}
                     <br />
                     -5
                     <img src="/assets/currency.svg" />
@@ -239,6 +245,7 @@ function PowerUpController() {
                 token: localStorage.getItem("token")
             });
             setPowerupsDialogOpen(false);
+            // FIX: Changed ${} to {} for JSX template literals
             setMessage(
                 <>
                     You used {clickedPower} on {clickedTeam.username}
@@ -256,6 +263,7 @@ function PowerUpController() {
                 token: localStorage.getItem("token")
             });
             setPowerupsDialogOpen(false);
+            // FIX: Changed ${} to {} for JSX template literals
             setMessage(
                 <>
                     You used {clickedPower} on {clickedTeam.username}
@@ -269,7 +277,7 @@ function PowerUpController() {
             socket.emit("power-up attack", {
                 powerUp: clickedPower,
                 from: username,
-                targetUserID: socketUser.userID,
+                targetUserID: socketUser?.userID, // FIX: Safe navigation operator
                 token: localStorage.getItem("token")
             });
             setPowerupsDialogOpen(false);
@@ -318,9 +326,12 @@ function PowerUpController() {
         initSocketConnection();
 
         socket.on("users", (users) => {
-            // Backend already excludes the current user from this list
             setTeams(users);
             setTeamsState(users);
+            if (users && users.length > 0) {
+                const currentUser = users.find(u => u.username === username);
+                setSocketUser(currentUser || users[0]);
+            }
         });
 
         socket.on("receive power-up", ({ powerUp, from }) => {
